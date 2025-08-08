@@ -47,7 +47,7 @@ agent_simple.configure(
 # Or specify different model/provider:
 agent_simple.configure(
     api_key="sk-your-openrouter-key",
-    model="anthropic/claude-3-sonnet",
+    model="anthropic/claude-4-1...",
     provider_order=["Anthropic"]
 )
 ```
@@ -56,7 +56,7 @@ agent_simple.configure(
 ```python
 agent_simple.configure(
     api_key="sk-your-openai-key",
-    model="gpt-4",  # or "gpt-3.5-turbo"
+    model="gpt-5", 
     base_url="https://api.openai.com/v1",
     provider_order=[]
 )
