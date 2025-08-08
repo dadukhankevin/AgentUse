@@ -4,12 +4,11 @@ Like computer use, or browser use, but for agentic coding CLIs.
 
 ## Features
 
-- 🤖 **Autonomous CLI Control**: Agents can control any CLI tool (Claude, Cursor, Gemini, etc.)
-- 🔗 **Parallel Execution**: Run multiple agents simultaneously 
-- 👀 **Visible Terminals**: See what your agents are doing in real Terminal windows
-- ⚡ **Simple API**: Just configure once and run with a single function call
-- 🎯 **Goal-Oriented**: Agents work toward specific objectives with time limits
-- 🧹 **Clean Output**: No color artifacts or rendering issues
+- 🤖 **Autonomous CLI Control**: Agents can control any CLI tool (Claude Code, Cursor CLI, Gemini CLI, Qwen, etc.)
+- **Parallel Execution**: Run multiple agents simultaneously 
+- **Visible Terminals**: See what your agents are doing in real Terminal windows
+- **Simple API**: Just configure once and run with a single function call
+- **Goal-Oriented**: Agents work toward specific objectives with time limits
 
 ## Installation
 
