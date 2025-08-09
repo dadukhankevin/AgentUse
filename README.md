@@ -41,7 +41,6 @@ agent_simple.run(
 ```python
 agent_simple.configure(
     api_key="sk-your-openrouter-key"
-    # Defaults: Claude 3.5 Sonnet via OpenRouter
 )
 
 # Or specify different model/provider:

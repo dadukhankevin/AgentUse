@@ -20,13 +20,24 @@ agentuse.configure(
 )
 
 def basic_example():
-    """Basic single agent example"""
+    """Basic single agent example with hard timer (force quits)"""
     print("🤖 Running basic agent example...")
     
     agentuse.run(
         goal="create a simple Python calculator that adds two numbers",
         cli_cmd="claude",
-        time_limit=3
+        time_limit=3  # Hard timer - will force quit after 3 minutes
+    )
+
+def soft_timer_example():
+    """Example with soft timer (stays at 0, doesn't quit)"""
+    print("🕐 Running soft timer example...")
+    
+    agentuse.run(
+        goal="write a web scraper for news articles",
+        cli_cmd="claude", 
+        time_limit=5,
+        soft_timer=True  # Soft timer - timer shows "EXPIRED" but keeps running
     )
 
 def parallel_example():
