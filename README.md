@@ -5,7 +5,9 @@ Autonomous CLI control for agentic coding tools. Like computer use, but for CLI 
 ## Installation
 
 ```bash
-pip install openai python-dotenv
+git clone https://github.com/dadukhankevin/AgentUse
+cd AgentUse
+pip install -r requirements.txt
 ```
 
 ## Quick Start
