@@ -36,7 +36,7 @@ agentuse.configure(api_key="sk-your-openrouter-key")
 # OpenAI
 agentuse.configure(
     api_key="sk-your-openai-key",
-    model="gpt-4",
+    model="gpt-5",
     base_url="https://api.openai.com/v1"
 )
 
