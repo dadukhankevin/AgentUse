@@ -27,5 +27,8 @@ print("- <ask_human>question for the human</ask_human>\n")
 agent.run(
     goal="Build a complete web application with both frontend and backend. Create a task management system with user authentication, real-time updates, and data persistence. Choose appropriate technologies and architecture.",
     cli_cmd="claude",
-    time_limit=15
+    time_limit=15,
+    first_command="/init",
+    directory="/tmp/webapp_project",
+    clone_from="~/templates/webapp_starter"  # Optional: start with template
 )

@@ -56,8 +56,42 @@ def clean_output(text: str) -> str:
     return text
 
 class Driver:
-    def __init__(self, cmd: str, directory: Optional[str] = None):
+    def __init__(self, cmd: str, directory: Optional[str] = None, clone_from: Optional[str] = None):
+        # Handle cloning first if specified
+        if clone_from and directory:
+            self._clone_directory(clone_from, directory)
+        
         cwd = directory or os.getcwd()
+        
+    def _clone_directory(self, source: str, target: str):
+        """Clone contents from source directory to target directory"""
+        import shutil
+        
+        try:
+            # Expand paths to handle ~ and relative paths
+            source = os.path.expanduser(source)
+            target = os.path.expanduser(target)
+            
+            # Create target directory if it doesn't exist
+            os.makedirs(target, exist_ok=True)
+            
+            # Copy all contents from source to target
+            if os.path.exists(source):
+                for item in os.listdir(source):
+                    src_path = os.path.join(source, item)
+                    dst_path = os.path.join(target, item)
+                    
+                    if os.path.isdir(src_path):
+                        shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(src_path, dst_path)
+                        
+                print(f"[Cloned {source} → {target}]")
+            else:
+                print(f"[Warning: Clone source {source} does not exist]")
+                
+        except Exception as e:
+            print(f"[Error cloning directory: {e}]")
         
         script = f'''
         tell application "Terminal"
@@ -126,13 +160,15 @@ class Driver:
         pass
 
 class Agent:
-    def __init__(self, goal: str, driver: Driver, time_limit_minutes: Optional[int], client, custom_tools, model, provider_order):
+    def __init__(self, goal: str, driver: Driver, time_limit_minutes: Optional[int], client, custom_tools, model, provider_order, first_command: Optional[str] = None):
         self.goal = goal
         self.driver = driver
         self.client = client
         self.custom_tools = custom_tools
         self.model = model
         self.provider_order = provider_order
+        self.first_command = first_command
+        self.first_command_sent = False
         self.message_history = [
             {"role": "system", "content": get_system_prompt(goal, custom_tools)},
             {"role": "user", "content": f"{goal}"}
@@ -143,6 +179,38 @@ class Agent:
         self.time_limit_minutes = time_limit_minutes
         self.last_screen_change_time = time.time()
         self.screen_stable_threshold = 0.5
+
+    def save_session(self, final_summary: str):
+        """Save session details to agentuse.md for resuming"""
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        content = f"""# Agent Session
+
+**Goal:** {self.goal}
+
+**Started:** {timestamp}
+
+**Final Summary:** {final_summary}
+
+---
+
+"""
+        try:
+            # Append to existing file or create new one
+            with open("agentuse.md", "a", encoding="utf-8") as f:
+                f.write(content)
+        except Exception as e:
+            print(f"[Warning: Could not save session to agentuse.md: {e}]")
+
+    @staticmethod
+    def load_previous_sessions():
+        """Load previous sessions from agentuse.md"""
+        try:
+            with open("agentuse.md", "r", encoding="utf-8") as f:
+                return f.read()
+        except FileNotFoundError:
+            return "No previous sessions found."
+        except Exception as e:
+            return f"Error loading sessions: {e}"
 
     def get_new_terminal_content(self, current_screen: str) -> str:
         if not self.previous_transcript:
@@ -169,6 +237,20 @@ class Agent:
             messages=[
                 {"role": "system", "content": "Summarize terminal output in 1-2 concise lines. Focus on what's happening, any prompts, errors, or key information."},
                 {"role": "user", "content": f"New terminal content:\n{new_content}"}
+            ],
+            temperature=0.3,
+            extra_body=extra_body,
+        )
+        return resp.choices[0].message.content.strip()
+
+    def generate_final_summary(self) -> str:
+        """Generate a final summary of what was accomplished"""
+        extra_body = {"provider": {"order": self.provider_order}} if self.provider_order else {}
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "Summarize what was accomplished in this session in 2-3 sentences. Focus on concrete results and outcomes."},
+                {"role": "user", "content": f"Goal: {self.goal}\n\nFinal terminal state:\n{self.transcript[-1000:]}"}
             ],
             temperature=0.3,
             extra_body=extra_body,
@@ -255,6 +337,15 @@ class Agent:
                     summary = self.summarize_terminal_output(new_content)
                     self.message_history.append({"role": "user", "content": f"Terminal: {summary}"})
                 
+                # Send first command if we haven't yet and screen seems ready
+                if self.first_command and not self.first_command_sent:
+                    if any(prompt in clean_screen.lower() for prompt in ["$", ">", "ready", "claude", "gemini"]):
+                        print(f"\n[Sending first command: {self.first_command}]")
+                        self.driver.send_text(self.first_command)
+                        self.first_command_sent = True
+                        time.sleep(1)
+                        continue
+                
                 continue
             
             time_since_last_change = time.time() - self.last_screen_change_time
@@ -281,6 +372,10 @@ class Agent:
 
             if result == "exit":
                 print("\n[Goal accomplished!]")
+                # Generate final summary
+                final_summary = self.generate_final_summary()
+                print(f"\n[Final Summary: {final_summary}]")
+                self.save_session(final_summary)
                 break
 
             time.sleep(0.3)
@@ -303,10 +398,17 @@ class AgentUse:
     def get_client(self):
         return openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
 
-    def run(self, goal: str, cli_cmd: str = "claude", time_limit: Optional[int] = None, directory: Optional[str] = None):
-        driver = Driver(cli_cmd, directory)
+    def show_previous_sessions(self):
+        """Display previous sessions from agentuse.md"""
+        sessions = Agent.load_previous_sessions()
+        print("\n=== PREVIOUS SESSIONS ===")
+        print(sessions)
+        print("=" * 50)
+
+    def run(self, goal: str, cli_cmd: str = "claude", time_limit: Optional[int] = None, directory: Optional[str] = None, first_command: Optional[str] = None, clone_from: Optional[str] = None):
+        driver = Driver(cli_cmd, directory, clone_from)
         client = self.get_client()
-        agent = Agent(goal, driver, time_limit, client, self.custom_tools, self.model, self.provider_order)
+        agent = Agent(goal, driver, time_limit, client, self.custom_tools, self.model, self.provider_order, first_command)
         agent.run()
         driver.close()
 
