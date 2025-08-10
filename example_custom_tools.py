@@ -29,6 +29,6 @@ agent.run(
     cli_cmd="claude",
     time_limit=15,
     first_command="/init",
-    directory="/tmp/webapp_project",
-    clone_from="~/templates/webapp_starter"  # Optional: start with template
+    directory="/tmp/webapp_project"
+    # clone_from="~/templates/webapp_starter"  # Optional: start with template
 )

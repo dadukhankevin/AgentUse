@@ -25,8 +25,8 @@ def basic_example():
         cli_cmd="claude",
         time_limit=3,
         first_command="/init",  # Auto-send this when claude loads
-        directory="/tmp/calculator_project",  # Work in specific directory
-        clone_from="~/project_templates/python_basic"  # Optional: clone template
+        directory="/tmp/calculator_project"  # Work in specific directory
+        # clone_from="~/project_templates/python_basic"  # Optional: clone template
     )
 
 def parallel_example():

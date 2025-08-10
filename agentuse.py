@@ -41,6 +41,9 @@ NEVER output technical syntax or code in prompts. Only give natural instructions
 When you see options or questions from the assistant, make the decision and instruct them to proceed.
 
 Exit when the core goal is achieved - don't over-engineer.
+Exit checklist:
+- did the CLI ask you a question - do not exist, keep going.
+- did come to a real stopping point with all changes applied, you may stop.
 """
     
     if instructions:
@@ -62,6 +65,9 @@ class Driver:
             self._clone_directory(clone_from, directory)
         
         cwd = directory or os.getcwd()
+        
+        # Start terminal window
+        self._start_terminal(cwd, cmd)
         
     def _clone_directory(self, source: str, target: str):
         """Clone contents from source directory to target directory"""
@@ -92,7 +98,9 @@ class Driver:
                 
         except Exception as e:
             print(f"[Error cloning directory: {e}]")
-        
+
+    def _start_terminal(self, cwd: str, cmd: str):
+        """Start terminal in the specified directory"""
         script = f'''
         tell application "Terminal"
             activate
